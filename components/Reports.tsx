@@ -73,22 +73,24 @@ const Reports: React.FC<ReportsProps> = ({ entries, budgets, teams, projects, te
   };
 
   const currentDataList = useMemo(() => {
+    let list: any[] = [];
     if (viewMode === 'single') {
       const stats = calculateTeamStats(selectedTeamId);
-      return stats ? [stats] : [];
+      list = stats ? [stats] : [];
     } else if (viewMode === 'compare') {
-      return teams.map(t => calculateTeamStats(t.id)).filter(Boolean);
+      list = teams.map(t => calculateTeamStats(t.id));
     } else {
       const projectTeams = teams.filter(t => 
         entries.some(e => e.teamId === t.id && e.projectId === selectedProjectId && e.year === filterYear && (filterMonth === ALL_MONTHS_LABEL ? true : e.month === filterMonth))
       );
-      return projectTeams.map(t => calculateTeamStats(t.id, selectedProjectId)).filter(Boolean);
+      list = projectTeams.map(t => calculateTeamStats(t.id, selectedProjectId));
     }
+    // TypeScript type guard to ensure no null items reach the map function
+    return list.filter((item): item is NonNullable<typeof item> => item !== null);
   }, [entries, budgets, teams, filterYear, filterMonth, viewMode, selectedTeamId, selectedProjectId]);
 
   const ReportPage = ({ data }: any) => (
     <div className="bg-white p-12 mb-8 erp-card print:mb-0 print:shadow-none print:border-none print-page-break report-card">
-      {/* Sayfa Başlığı */}
       <div className="flex justify-between items-center border-b-2 border-slate-900 pb-4 mb-8">
         <div>
           <h2 className="text-xl font-black text-slate-900 leading-none mb-2">{template.headerTitle}</h2>
@@ -103,7 +105,6 @@ const Reports: React.FC<ReportsProps> = ({ entries, budgets, teams, projects, te
         </div>
       </div>
 
-      {/* Ekip Bütçe ve Personel Bilgisi - HER SAYFA BAŞINDA ZORUNLU */}
       <div className="grid grid-cols-2 gap-4 mb-8">
         <div className="border border-slate-200 p-5 bg-slate-50">
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{getFieldLabel('personnel', 'AKTİF PERSONEL SAYISI')}</p>
@@ -115,7 +116,6 @@ const Reports: React.FC<ReportsProps> = ({ entries, budgets, teams, projects, te
         </div>
       </div>
 
-      {/* Performans ve Üretim Detayları */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
         <div className="space-y-6">
           <h3 className="text-xs font-black text-slate-900 uppercase border-b border-slate-200 pb-2 flex items-center gap-2">
