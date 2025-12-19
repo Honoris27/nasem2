@@ -33,20 +33,23 @@
       .erp-table th { background: #f1f5f9; border: 1px solid #e2e8f0; padding: 10px; text-align: left; font-weight: 700; color: #475569; }
       .erp-table td { border: 1px solid #e2e8f0; padding: 10px; }
     </style>
-    <script type="importmap">
-    {
-      "imports": {
-        "recharts": "https://esm.sh/recharts@^3.6.0",
-        "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-        "lucide-react": "https://esm.sh/lucide-react@^0.561.0",
-        "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.39.7",
-        "react/": "https://esm.sh/react@^19.2.3/",
-        "react": "https://esm.sh/react@^19.2.3"
-      }
-    }
-    </script>
-  </head>
+  <script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "vite": "https://esm.sh/vite@^7.3.0",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.89.0",
+    "recharts": "https://esm.sh/recharts@^3.6.0"
+  }
+}
+</script>
+</head>
   <body>
     <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
   </body>
 </html>
