@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState } from 'react';
 import { 
   Team, Project, Budget, ProductionEntry, 
@@ -85,11 +84,12 @@ const Reports: React.FC<ReportsProps> = ({ entries, budgets, teams, projects, te
       );
       list = projectTeams.map(t => calculateTeamStats(t.id, selectedProjectId));
     }
-    // TypeScript type guard to ensure no null items reach the map function
+    
+    // Explicit type guard to satisfy TS compiler that item is not null
     return list.filter((item): item is NonNullable<typeof item> => item !== null);
   }, [entries, budgets, teams, filterYear, filterMonth, viewMode, selectedTeamId, selectedProjectId]);
 
-  const ReportPage = ({ data }: any) => (
+  const ReportPage = ({ data }: { data: any }) => (
     <div className="bg-white p-12 mb-8 erp-card print:mb-0 print:shadow-none print:border-none print-page-break report-card">
       <div className="flex justify-between items-center border-b-2 border-slate-900 pb-4 mb-8">
         <div>

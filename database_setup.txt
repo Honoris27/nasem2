@@ -1,0 +1,65 @@
+-- PRO ANALİZ ENTERPRISE - SUPABASE KURULUM SQL KODLARI
+-- Bu kodları Supabase panelindeki "SQL Editor" kısmına yapıştırıp çalıştırın.
+
+-- 1. Ekipler Tablosu
+CREATE TABLE teams (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 2. Projeler Tablosu
+CREATE TABLE projects (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 3. Bütçeler Tablosu (camelCase sütunlar için çift tırnak kullanılmıştır)
+CREATE TABLE budgets (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "teamId" UUID REFERENCES teams(id) ON DELETE CASCADE,
+  year INTEGER NOT NULL,
+  month TEXT NOT NULL,
+  "personnelCount" INTEGER NOT NULL DEFAULT 0,
+  "amountTL" NUMERIC NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 4. Üretim Girişleri Tablosu
+CREATE TABLE entries (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  year INTEGER NOT NULL,
+  month TEXT NOT NULL,
+  "projectId" UUID REFERENCES projects(id) ON DELETE CASCADE,
+  "teamId" UUID REFERENCES teams(id) ON DELETE CASCADE,
+  type TEXT NOT NULL,
+  "quantityKg" NUMERIC NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 5. Sistem Ayarları Tablosu
+CREATE TABLE settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+
+-- 6. Başlangıç Verilerini Ekle
+INSERT INTO settings (key, value) VALUES
+('viewer_password', '123456'),
+('report_template', '[{"id":"team","name":"Standart ERP Şablonu","showCharts":true,"headerTitle":"PERSONEL VE ÜRETİM ANALİZ RAPORU","fields":[{"id":"personnel","label":"Aktif Personel","visible":true},{"id":"budget","label":"Toplam Hakediş","visible":true},{"id":"efficiency","label":"Birim Verim (kg/kişi)","visible":true},{"id":"costPerKg","label":"Birim Maliyet (TL/kg)","visible":true},{"id":"breakdown","label":"Üretim Detayları","visible":true},{"id":"manHours","label":"Çalışma Saati","visible":true}]}]')
+ON CONFLICT (key) DO NOTHING;
+
+-- 7. Güvenlik Politikalarını Etkinleştir (RLS)
+ALTER TABLE teams ENABLE ROW LEVEL SECURITY;
+ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE budgets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE entries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
+
+-- 8. Herkese Açık Erişim İzinleri (Demo/Geliştirme için)
+CREATE POLICY "Public Access Teams" ON teams FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access Projects" ON projects FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access Budgets" ON budgets FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access Entries" ON entries FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Access Settings" ON settings FOR ALL USING (true) WITH CHECK (true);
