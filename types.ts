@@ -55,7 +55,7 @@ export interface ReportTemplate {
   headerTitle: string;
 }
 
-export type ViewType = 'dashboard' | 'entry' | 'budgets' | 'settings' | 'reports' | 'summary';
+export type ViewType = 'dashboard' | 'entry' | 'budgets' | 'settings' | 'reports' | 'yearly' | 'project-report';
 
 export const MONTHS = [
   'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 

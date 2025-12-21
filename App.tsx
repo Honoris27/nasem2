@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Team, Project, Budget, ProductionEntry, ViewType, UserRole, ReportTemplate
@@ -10,9 +9,10 @@ import DataEntry from './components/DataEntry';
 import BudgetManager from './components/BudgetManager';
 import SettingsView from './components/SettingsView';
 import Reports from './components/Reports';
-import PeriodSummary from './components/PeriodSummary';
+import YearlyReport from './components/YearlyReport';
+import ProjectReport from './components/ProjectReport';
 import Login from './components/Login';
-import { LogOut, User, ChevronRight, Loader2 } from 'lucide-react';
+import { LogOut, User, ChevronRight, Loader2, FileText, Briefcase } from 'lucide-react';
 
 const App: React.FC = () => {
   const [userRole, setUserRole] = useState<UserRole | null>(() => {
@@ -82,9 +82,8 @@ const App: React.FC = () => {
     localStorage.removeItem('userRole');
   };
 
-  // CRUD İşlemleri için yardımcı fonksiyonlar
   const addEntry = async (entry: Omit<ProductionEntry, 'id'>) => {
-    const { data, error } = await supabase.from('entries').insert([entry]).select();
+    const { data } = await supabase.from('entries').insert([entry]).select();
     if (data) setEntries([...entries, data[0]]);
   };
 
@@ -94,7 +93,7 @@ const App: React.FC = () => {
   };
 
   const addBudget = async (budget: Omit<Budget, 'id'>) => {
-    const { data, error } = await supabase.from('budgets').insert([budget]).select();
+    const { data } = await supabase.from('budgets').insert([budget]).select();
     if (data) setBudgets([...budgets, data[0]]);
   };
 
@@ -107,8 +106,9 @@ const App: React.FC = () => {
     { id: 'dashboard', label: 'Genel Bakış', icon: ICONS.Dashboard, roles: ['admin', 'viewer'] },
     { id: 'entry', label: 'Üretim Girişleri', icon: ICONS.Entry, roles: ['admin'] },
     { id: 'budgets', label: 'Bütçe & Personel', icon: ICONS.Budgets, roles: ['admin'] },
-    { id: 'reports', label: 'Performans Raporları', icon: ICONS.Reports, roles: ['admin', 'viewer'] },
-    { id: 'summary', label: 'Dönem Sonu Özeti', icon: ICONS.Summary, roles: ['admin', 'viewer'] },
+    { id: 'reports', label: 'Aylık Performans', icon: ICONS.Reports, roles: ['admin', 'viewer'] },
+    { id: 'project-report', label: 'Proje Bazlı Rapor', icon: <Briefcase size={20} />, roles: ['admin', 'viewer'] },
+    { id: 'yearly', label: 'Yıllık Faaliyet', icon: <FileText size={20} />, roles: ['admin', 'viewer'] },
     { id: 'settings', label: 'Sistem Ayarları', icon: ICONS.Settings, roles: ['admin'] },
   ];
 
@@ -179,7 +179,8 @@ const App: React.FC = () => {
           {activeView === 'entry' && <DataEntry teams={teams} projects={projects} onAddEntry={addEntry} entries={entries} onDeleteEntry={deleteEntry} />}
           {activeView === 'budgets' && <BudgetManager teams={teams} budgets={budgets} onAddBudget={addBudget} onDeleteBudget={deleteBudget} />}
           {activeView === 'reports' && <Reports entries={entries} budgets={budgets} teams={teams} projects={projects} template={templates[0]} />}
-          {activeView === 'summary' && <PeriodSummary entries={entries} budgets={budgets} teams={teams} />}
+          {activeView === 'yearly' && <YearlyReport entries={entries} budgets={budgets} teams={teams} projects={projects} />}
+          {activeView === 'project-report' && <ProjectReport entries={entries} budgets={budgets} teams={teams} projects={projects} />}
           {activeView === 'settings' && (
              <SettingsView 
                 teams={teams} 
