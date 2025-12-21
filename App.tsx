@@ -12,7 +12,7 @@ import Reports from './components/Reports';
 import YearlyReport from './components/YearlyReport';
 import ProjectReport from './components/ProjectReport';
 import Login from './components/Login';
-import { LogOut, User, ChevronRight, Loader2, FileText, Briefcase } from 'lucide-react';
+import { LogOut, User, ChevronRight, Loader2, FileText, Briefcase, Menu } from 'lucide-react';
 
 const App: React.FC = () => {
   const [userRole, setUserRole] = useState<UserRole | null>(() => {
@@ -30,7 +30,6 @@ const App: React.FC = () => {
   const [entries, setEntries] = useState<ProductionEntry[]>([]);
   const [templates, setTemplates] = useState<ReportTemplate[]>([]);
 
-  // Verileri Supabase'den çek
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -73,7 +72,6 @@ const App: React.FC = () => {
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
 
@@ -82,41 +80,21 @@ const App: React.FC = () => {
     localStorage.removeItem('userRole');
   };
 
-  const addEntry = async (entry: Omit<ProductionEntry, 'id'>) => {
-    const { data } = await supabase.from('entries').insert([entry]).select();
-    if (data) setEntries([...entries, data[0]]);
-  };
-
-  const deleteEntry = async (id: string) => {
-    const { error } = await supabase.from('entries').delete().eq('id', id);
-    if (!error) setEntries(entries.filter(e => e.id !== id));
-  };
-
-  const addBudget = async (budget: Omit<Budget, 'id'>) => {
-    const { data } = await supabase.from('budgets').insert([budget]).select();
-    if (data) setBudgets([...budgets, data[0]]);
-  };
-
-  const deleteBudget = async (id: string) => {
-    const { error } = await supabase.from('budgets').delete().eq('id', id);
-    if (!error) setBudgets(budgets.filter(b => b.id !== id));
-  };
-
   const sidebarItems = [
-    { id: 'dashboard', label: 'Genel Bakış', icon: ICONS.Dashboard, roles: ['admin', 'viewer'] },
-    { id: 'entry', label: 'Üretim Girişleri', icon: ICONS.Entry, roles: ['admin'] },
-    { id: 'budgets', label: 'Bütçe & Personel', icon: ICONS.Budgets, roles: ['admin'] },
-    { id: 'reports', label: 'Aylık Performans', icon: ICONS.Reports, roles: ['admin', 'viewer'] },
-    { id: 'project-report', label: 'Proje Bazlı Rapor', icon: <Briefcase size={20} />, roles: ['admin', 'viewer'] },
-    { id: 'yearly', label: 'Yıllık Faaliyet', icon: <FileText size={20} />, roles: ['admin', 'viewer'] },
-    { id: 'settings', label: 'Sistem Ayarları', icon: ICONS.Settings, roles: ['admin'] },
+    { id: 'dashboard', label: 'DASHBOARD', icon: ICONS.Dashboard, roles: ['admin', 'viewer'] },
+    { id: 'entry', label: 'VERİ GİRİŞİ', icon: ICONS.Entry, roles: ['admin'] },
+    { id: 'budgets', label: 'KAPASİTE & BÜTÇE', icon: ICONS.Budgets, roles: ['admin'] },
+    { id: 'reports', label: 'AYLIK ANALİZ', icon: ICONS.Reports, roles: ['admin', 'viewer'] },
+    { id: 'project-report', label: 'PROJE ANALİZİ', icon: <Briefcase size={16} />, roles: ['admin', 'viewer'] },
+    { id: 'yearly', label: 'YILLIK FAALİYET', icon: <FileText size={16} />, roles: ['admin', 'viewer'] },
+    { id: 'settings', label: 'SİSTEM AYARLARI', icon: ICONS.Settings, roles: ['admin'] },
   ];
 
   if (loading) {
     return (
       <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-900 text-white gap-4">
-        <Loader2 className="animate-spin text-blue-500" size={48} />
-        <p className="text-sm font-bold tracking-widest uppercase">ERP Veritabanı Bağlanıyor...</p>
+        <Loader2 className="animate-spin text-blue-500" size={32} />
+        <p className="text-[10px] font-black tracking-widest uppercase opacity-50">Sistem Hazırlanıyor...</p>
       </div>
     );
   }
@@ -124,95 +102,118 @@ const App: React.FC = () => {
   if (!userRole) return <Login onLogin={setUserRole} viewerPassword={viewerPassword} />;
 
   return (
-    <div className="flex h-screen bg-slate-100 overflow-hidden text-slate-700">
-      <aside className="w-60 bg-slate-800 text-slate-300 flex flex-col flex-shrink-0 no-print border-r border-slate-700">
-        <div className="h-14 flex items-center px-6 bg-slate-900 border-b border-slate-700">
-          <span className="font-black text-white tracking-widest text-sm">PRO ANALİZ <span className="text-blue-500">ERP</span></span>
+    <div className="flex h-screen bg-[#f1f5f9] overflow-hidden">
+      {/* PROFESSIONAL SIDEBAR (PC VERSION) */}
+      <aside className="w-52 bg-[#0f172a] text-slate-400 flex flex-col flex-shrink-0 no-print border-r border-slate-800">
+        <div className="h-12 flex items-center px-5 bg-[#020617] border-b border-white/5">
+          <span className="font-black text-white text-[11px] tracking-widest uppercase">PROANALİZ <span className="text-blue-500">ERP</span></span>
         </div>
 
-        <nav className="flex-1 py-2 overflow-y-auto">
+        <nav className="flex-1 py-4 overflow-y-auto">
           {sidebarItems.filter(item => item.roles.includes(userRole)).map((item) => (
             <button
               key={item.id}
               onClick={() => setActiveView(item.id as ViewType)}
-              className={`w-full flex items-center justify-between px-6 py-2.5 transition-all ${
+              className={`w-full flex items-center gap-3 px-5 py-2.5 transition-all text-[11px] font-bold uppercase tracking-tighter ${
                 activeView === item.id 
-                  ? 'bg-blue-600 text-white' 
-                  : 'hover:bg-slate-700 hover:text-white'
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' 
+                  : 'hover:bg-slate-800 hover:text-white'
               }`}
             >
-              <div className="flex items-center gap-3 text-[13px] font-semibold">
+              <div className={activeView === item.id ? 'text-white' : 'text-slate-500'}>
                 {item.icon}
-                <span>{item.label}</span>
               </div>
-              {activeView === item.id && <ChevronRight size={12} />}
+              <span>{item.label}</span>
             </button>
           ))}
         </nav>
         
-        <div className="p-4 border-t border-slate-700 bg-slate-900/30">
-          <div className="flex items-center gap-2 px-2 py-2 mb-2">
-            <User size={14} className="text-slate-500" />
-            <span className="text-[10px] font-bold uppercase tracking-wider">{userRole} MODU</span>
+        <div className="p-4 bg-slate-900/50 border-t border-white/5">
+          <div className="flex items-center gap-2 mb-3">
+             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+             <span className="text-[9px] font-black text-slate-500 uppercase">{userRole} MODU</span>
           </div>
           <button 
             onClick={handleLogout}
-            className="w-full py-2 bg-slate-700 hover:bg-red-900/40 text-slate-300 rounded text-[11px] font-bold"
+            className="w-full py-2 bg-slate-800 hover:bg-red-900/40 text-slate-300 rounded text-[10px] font-black uppercase tracking-widest transition-colors"
           >
-            OTURUMU KAPAT
+            GÜVENLİ ÇIKIŞ
           </button>
         </div>
       </aside>
 
-      <main className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-8 no-print z-10">
-          <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
-            {sidebarItems.find(i => i.id === activeView)?.label}
-          </h2>
-          <span className="text-[11px] font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded border border-slate-200">
-            SİSTEM TARİHİ: {new Date().toLocaleDateString('tr-TR')}
-          </span>
+      <main className="flex-1 flex flex-col overflow-hidden relative">
+        <header className="h-12 bg-white border-b border-slate-200 flex items-center justify-between px-6 no-print shadow-sm z-10">
+          <div className="flex items-center gap-4">
+            <Menu size={16} className="text-slate-400" />
+            <h2 className="text-[10px] font-black text-slate-900 uppercase tracking-[0.2em]">
+              {sidebarItems.find(i => i.id === activeView)?.label}
+            </h2>
+          </div>
+          <div className="flex items-center gap-4">
+             <span className="text-[10px] font-bold text-slate-400">
+               TERMINAL ID: <span className="text-slate-900">#PA-788</span>
+             </span>
+             <div className="h-4 w-[1px] bg-slate-200"></div>
+             <span className="text-[10px] font-bold text-slate-900 bg-slate-50 px-3 py-1 border border-slate-200 uppercase">
+               {new Date().toLocaleDateString('tr-TR')}
+             </span>
+          </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-6 max-w-full print:p-0">
-          {activeView === 'dashboard' && <Dashboard entries={entries} budgets={budgets} teams={teams} projects={projects} />}
-          {activeView === 'entry' && <DataEntry teams={teams} projects={projects} onAddEntry={addEntry} entries={entries} onDeleteEntry={deleteEntry} />}
-          {activeView === 'budgets' && <BudgetManager teams={teams} budgets={budgets} onAddBudget={addBudget} onDeleteBudget={deleteBudget} />}
-          {activeView === 'reports' && <Reports entries={entries} budgets={budgets} teams={teams} projects={projects} template={templates[0]} />}
-          {activeView === 'yearly' && <YearlyReport entries={entries} budgets={budgets} teams={teams} projects={projects} />}
-          {activeView === 'project-report' && <ProjectReport entries={entries} budgets={budgets} teams={teams} projects={projects} />}
-          {activeView === 'settings' && (
-             <SettingsView 
-                teams={teams} 
-                projects={projects} 
-                viewerPassword={viewerPassword} 
-                templates={templates} 
-                onUpdateTemplates={async (t) => {
-                  setTemplates(t);
-                  await supabase.from('settings').upsert({ key: 'report_template', value: JSON.stringify(t) });
-                }} 
-                onUpdateViewerPassword={async (pw) => {
-                  setViewerPassword(pw);
-                  await supabase.from('settings').upsert({ key: 'viewer_password', value: pw });
-                }} 
-                onAddTeam={async (name) => {
-                  const { data } = await supabase.from('teams').insert({ name }).select();
-                  if (data) setTeams([...teams, data[0]]);
-                }}
-                onAddProject={async (name) => {
-                  const { data } = await supabase.from('projects').insert({ name }).select();
-                  if (data) setProjects([...projects, data[0]]);
-                }}
-                onDeleteTeam={async (id) => {
-                  await supabase.from('teams').delete().eq('id', id);
-                  setTeams(teams.filter(t => t.id !== id));
-                }}
-                onDeleteProject={async (id) => {
-                  await supabase.from('projects').delete().eq('id', id);
-                  setProjects(projects.filter(p => p.id !== id));
-                }}
-             />
-          )}
+        <div className="flex-1 overflow-y-auto p-4 print:p-0">
+          <div className="max-w-[1400px] mx-auto w-full">
+            {activeView === 'dashboard' && <Dashboard entries={entries} budgets={budgets} teams={teams} projects={projects} />}
+            {activeView === 'entry' && <DataEntry teams={teams} projects={projects} onAddEntry={async (e) => {
+              const { data } = await supabase.from('entries').insert([e]).select();
+              if (data) setEntries([...entries, data[0]]);
+            }} entries={entries} onDeleteEntry={async (id) => {
+              await supabase.from('entries').delete().eq('id', id);
+              setEntries(entries.filter(e => e.id !== id));
+            }} />}
+            {activeView === 'budgets' && <BudgetManager teams={teams} budgets={budgets} onAddBudget={async (b) => {
+              const { data } = await supabase.from('budgets').insert([b]).select();
+              if (data) setBudgets([...budgets, data[0]]);
+            }} onDeleteBudget={async (id) => {
+              await supabase.from('budgets').delete().eq('id', id);
+              setBudgets(budgets.filter(b => b.id !== id));
+            }} />}
+            {activeView === 'reports' && <Reports entries={entries} budgets={budgets} teams={teams} projects={projects} template={templates[0]} />}
+            {activeView === 'yearly' && <YearlyReport entries={entries} budgets={budgets} teams={teams} projects={projects} />}
+            {activeView === 'project-report' && <ProjectReport entries={entries} budgets={budgets} teams={teams} projects={projects} />}
+            {activeView === 'settings' && (
+               <SettingsView 
+                  teams={teams} 
+                  projects={projects} 
+                  viewerPassword={viewerPassword} 
+                  templates={templates} 
+                  onUpdateTemplates={async (t) => {
+                    setTemplates(t);
+                    await supabase.from('settings').upsert({ key: 'report_template', value: JSON.stringify(t) });
+                  }} 
+                  onUpdateViewerPassword={async (pw) => {
+                    setViewerPassword(pw);
+                    await supabase.from('settings').upsert({ key: 'viewer_password', value: pw });
+                  }} 
+                  onAddTeam={async (name) => {
+                    const { data } = await supabase.from('teams').insert({ name }).select();
+                    if (data) setTeams([...teams, data[0]]);
+                  }}
+                  onAddProject={async (name) => {
+                    const { data } = await supabase.from('projects').insert({ name }).select();
+                    if (data) setProjects([...projects, data[0]]);
+                  }}
+                  onDeleteTeam={async (id) => {
+                    await supabase.from('teams').delete().eq('id', id);
+                    setTeams(teams.filter(t => t.id !== id));
+                  }}
+                  onDeleteProject={async (id) => {
+                    await supabase.from('projects').delete().eq('id', id);
+                    setProjects(projects.filter(p => p.id !== id));
+                  }}
+               />
+            )}
+          </div>
         </div>
       </main>
     </div>

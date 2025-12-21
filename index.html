@@ -3,93 +3,86 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ProAnaliz Enterprise | Kurumsal ERP Performans Sistemi</title>
+    <title>ProAnaliz Enterprise v2.0 | Desktop ERP</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
       body { 
         font-family: 'Inter', sans-serif; 
-        background-color: #f8fafc;
-        color: #1e293b;
-        font-size: 13px; /* Global font bazını %5 küçülttük */
+        background-color: #f1f5f9;
+        color: #0f172a;
+        font-size: 12px; /* ERP standart küçük font */
+        overflow: hidden; /* Dış scrollbar engelleme */
       }
       
-      /* YENİ NESİL BASKI SİSTEMİ - YATAY (LANDSCAPE) OPTİMİZASYONU */
+      /* ERP PANEL STYLES */
+      .erp-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 4px; /* Keskin kurumsal köşeler */
+      }
+
+      /* COMPACT TABLE SYSTEM */
+      .erp-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+      .erp-table th { 
+        background: #f8fafc; 
+        border: 1px solid #e2e8f0; 
+        padding: 6px 8px; 
+        font-weight: 800; 
+        font-size: 10px;
+        text-transform: uppercase;
+        color: #64748b;
+        letter-spacing: 0.05em;
+      }
+      .erp-table td { 
+        border: 1px solid #f1f5f9; 
+        padding: 6px 8px; 
+        font-size: 11px;
+      }
+
+      /* PRINT ENGINE - LANDSCAPE COMPACT */
       @media print {
         @page { 
           size: A4 landscape; 
-          margin: 5mm 5mm 5mm 5mm; 
+          margin: 4mm; 
         }
         
-        body, #root, main, .overflow-y-auto { 
+        body, #root, main { 
           background: white !important; 
           padding: 0 !important;
           margin: 0 !important;
-          overflow: visible !important; /* Scrollbar problemini çözen kritik kod */
+          overflow: visible !important;
           height: auto !important;
-          max-height: none !important;
         }
 
-        /* Scrollbar'ı tamamen gizle */
-        ::-webkit-scrollbar {
-          display: none !important;
-        }
+        .no-print { display: none !important; }
 
-        .no-print { 
-          display: none !important; 
-        }
-
-        /* Renkleri ve arka planları koru */
         * {
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
+          box-shadow: none !important;
+          text-shadow: none !important;
         }
 
-        /* Rapor Kartı Düzenlemeleri */
         .report-card { 
           width: 100% !important;
-          max-width: none !important;
-          margin: 0 !important;
-          padding: 20px !important; /* Boşluklar daraltıldı */
-          box-shadow: none !important;
-          border: none !important;
-          break-inside: avoid;
-          overflow: visible !important;
+          padding: 10px !important;
+          border: 1px solid #000 !important;
         }
 
-        /* Tablo genişlik ve taşma ayarları */
-        table {
-          width: 100% !important;
-          table-layout: fixed !important;
-          border-collapse: collapse !important;
-        }
-
-        th, td {
-          word-wrap: break-word !important;
-          padding: 6px 4px !important; /* Satır boşlukları daraltıldı */
-        }
-
-        .print-page-break { 
-          page-break-after: always !important; 
-          break-after: page !important; 
-          display: block !important; 
+        .erp-table { 
+          font-size: 9px !important; /* Baskıda daha küçük font */
         }
         
-        main {
-          margin: 0 !important;
-          padding: 0 !important;
-          display: block !important;
+        .erp-table th, .erp-table td {
+          padding: 3px !important;
         }
       }
 
-      .erp-input {
-        border: 1px solid #cbd5e1;
-        border-radius: 2px;
-        padding: 6px 10px;
-        font-size: 12px;
-        outline: none;
-        width: 100%;
-      }
+      ::-webkit-scrollbar { width: 6px; height: 6px; }
+      ::-webkit-scrollbar-track { background: #f1f5f9; }
+      ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+      ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
   <script type="importmap">
 {
