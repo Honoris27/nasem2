@@ -55,6 +55,7 @@ const Reports: React.FC<ReportsProps> = ({ entries, budgets, teams, projects, te
       const teamHours = teamBudget ? (teamBudget.personnelCount * (teamBudget.workingDays?.length || 0) * DAILY_WORKING_HOURS) : 0;
       const teamCost = teamBudget?.amountTL || 0;
       const unitCost = teamTotalKg > 0 ? (teamCost / teamTotalKg) : 0;
+      const personnelCount = teamBudget?.personnelCount || 0;
 
       const projectBreakdown = Array.from(new Set(teamEntries.map(e => e.projectId))).map(pId => {
         const pEntries = teamEntries.filter(e => e.projectId === pId);
@@ -73,6 +74,7 @@ const Reports: React.FC<ReportsProps> = ({ entries, budgets, teams, projects, te
       return {
         teamId: team.id,
         teamName: team.name,
+        personnelCount,
         imalat: teamEntries.filter(e => e.type === ProductionType.IMALAT).reduce((a, c) => a + c.quantityKg, 0),
         kaynak: teamEntries.filter(e => e.type === ProductionType.KAYNAK).reduce((a, c) => a + c.quantityKg, 0),
         temizlik: teamEntries.filter(e => e.type === ProductionType.TEMIZLIK).reduce((a, c) => a + c.quantityKg, 0),
@@ -141,51 +143,52 @@ const Reports: React.FC<ReportsProps> = ({ entries, budgets, teams, projects, te
           </div>
 
           <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-sm print:rounded-none">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse table-fixed">
               <thead>
                 <tr className="bg-slate-900 text-white text-[9px] font-black uppercase tracking-[0.1em]">
-                  <th className="px-6 py-4 border-r border-slate-800">EKİP / PROJE DETAYI</th>
-                  <th className="px-3 py-4 text-center border-r border-slate-800">İMALAT (KG)</th>
-                  <th className="px-3 py-4 text-center border-r border-slate-800">KAYNAK (KG)</th>
-                  <th className="px-3 py-4 text-center border-r border-slate-800">TEMİZLİK (KG)</th>
-                  <th className="px-3 py-4 text-center border-r border-slate-800 bg-slate-800">TOPLAM KG</th>
-                  <th className="px-3 py-4 text-center border-r border-slate-800">ADAM-SAAT</th>
-                  <th className="px-3 py-4 text-right">B. MALİYET</th>
+                  <th className="px-6 py-4 border-r border-slate-800 w-[200px]">EKİP / PROJE DETAYI</th>
+                  <th className="px-2 py-4 text-center border-r border-slate-800">İMALAT (KG)</th>
+                  <th className="px-2 py-4 text-center border-r border-slate-800">KAYNAK (KG)</th>
+                  <th className="px-2 py-4 text-center border-r border-slate-800">TEMİZLİK (KG)</th>
+                  <th className="px-2 py-4 text-center border-r border-slate-800 bg-slate-800">TOPLAM KG</th>
+                  <th className="px-1 py-4 text-center border-r border-slate-800 w-[80px]">ADAM-SAAT</th>
+                  <th className="px-1 py-4 text-right w-[80px]">B. MALİYET</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {matrixData.map((teamData) => (
                   <React.Fragment key={teamData.teamId}>
                     <tr className="bg-slate-50/50">
-                      <td className="px-6 py-3 border-r border-slate-200">
+                      <td className="px-6 py-2 border-r border-slate-200">
                         <div className="flex items-center gap-2">
                           <Users size={12} className="text-blue-600" />
                           <span className="text-[10px] font-black text-slate-900 uppercase tracking-tight">{teamData.teamName}</span>
+                          <span className="text-[8px] font-bold text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">({teamData.personnelCount} P.)</span>
                         </div>
                       </td>
-                      <td className="px-3 py-3 text-center text-[10px] font-bold text-slate-500 border-r border-slate-200">{teamData.imalat.toLocaleString()}</td>
-                      <td className="px-3 py-3 text-center text-[10px] font-bold text-slate-500 border-r border-slate-200">{teamData.kaynak.toLocaleString()}</td>
-                      <td className="px-3 py-3 text-center text-[10px] font-bold text-slate-500 border-r border-slate-200">{teamData.temizlik.toLocaleString()}</td>
-                      <td className="px-3 py-3 text-center text-[10px] font-black text-slate-900 border-r border-slate-200 bg-slate-100/50">{teamData.totalKg.toLocaleString()}</td>
-                      <td className="px-3 py-3 text-center text-[10px] font-black text-slate-900 border-r border-slate-200">{Math.round(teamData.hours).toLocaleString()}</td>
-                      <td className="px-3 py-3 text-right text-[10px] font-black text-emerald-600">
+                      <td className="px-2 py-2 text-center text-[10px] font-bold text-slate-500 border-r border-slate-200">{teamData.imalat.toLocaleString()}</td>
+                      <td className="px-2 py-2 text-center text-[10px] font-bold text-slate-500 border-r border-slate-200">{teamData.kaynak.toLocaleString()}</td>
+                      <td className="px-2 py-2 text-center text-[10px] font-bold text-slate-500 border-r border-slate-200">{teamData.temizlik.toLocaleString()}</td>
+                      <td className="px-2 py-2 text-center text-[10px] font-black text-slate-900 border-r border-slate-200 bg-slate-100/50">{teamData.totalKg.toLocaleString()}</td>
+                      <td className="px-1 py-2 text-center text-[10px] font-black text-slate-900 border-r border-slate-200">{Math.round(teamData.hours).toLocaleString()}</td>
+                      <td className="px-1 py-2 text-right text-[10px] font-black text-emerald-600">
                         ₺{teamData.unitCost.toFixed(2)}
                       </td>
                     </tr>
                     {teamData.projects.map((proj) => (
                       <tr key={proj.id} className="hover:bg-slate-50/30 transition-colors">
-                        <td className="px-10 py-2 border-r border-slate-100">
+                        <td className="px-10 py-1 border-r border-slate-100">
                           <div className="flex items-center gap-2 opacity-60">
                             <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
-                            <span className="text-[9.5px] font-bold text-slate-500 lowercase">{proj.name}</span>
+                            <span className="text-[9px] font-bold text-slate-500 lowercase">{proj.name}</span>
                           </div>
                         </td>
-                        <td className="px-3 py-2 text-center text-[9px] font-medium text-slate-400 border-r border-slate-100 italic">{proj.imalat.toLocaleString()}</td>
-                        <td className="px-3 py-2 text-center text-[9px] font-medium text-slate-400 border-r border-slate-100 italic">{proj.kaynak.toLocaleString()}</td>
-                        <td className="px-3 py-2 text-center text-[9px] font-medium text-slate-400 border-r border-slate-100 italic">{proj.temizlik.toLocaleString()}</td>
-                        <td className="px-3 py-2 text-center text-[10px] font-bold text-slate-600 border-r border-slate-100 italic">{proj.total.toLocaleString()}</td>
-                        <td className="px-3 py-2 text-center text-[9px] text-slate-300 border-r border-slate-100">—</td>
-                        <td className="px-3 py-2 text-right text-[9px] text-slate-300">—</td>
+                        <td className="px-2 py-1 text-center text-[9px] font-medium text-slate-400 border-r border-slate-100 italic">{proj.imalat.toLocaleString()}</td>
+                        <td className="px-2 py-1 text-center text-[9px] font-medium text-slate-400 border-r border-slate-100 italic">{proj.kaynak.toLocaleString()}</td>
+                        <td className="px-2 py-1 text-center text-[9px] font-medium text-slate-400 border-r border-slate-100 italic">{proj.temizlik.toLocaleString()}</td>
+                        <td className="px-2 py-1 text-center text-[9.5px] font-bold text-slate-600 border-r border-slate-100 italic">{proj.total.toLocaleString()}</td>
+                        <td className="px-1 py-1 text-center text-[9px] text-slate-300 border-r border-slate-100">—</td>
+                        <td className="px-1 py-1 text-right text-[9px] text-slate-300">—</td>
                       </tr>
                     ))}
                   </React.Fragment>
