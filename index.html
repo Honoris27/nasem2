@@ -11,19 +11,28 @@
         font-family: 'Inter', sans-serif; 
         background-color: #f8fafc;
         color: #1e293b;
+        font-size: 13px; /* Global font bazını %5 küçülttük */
       }
       
       /* YENİ NESİL BASKI SİSTEMİ - YATAY (LANDSCAPE) OPTİMİZASYONU */
       @media print {
         @page { 
           size: A4 landscape; 
-          margin: 10mm 10mm 10mm 10mm; 
+          margin: 5mm 5mm 5mm 5mm; 
         }
         
-        body { 
+        body, #root, main, .overflow-y-auto { 
           background: white !important; 
           padding: 0 !important;
           margin: 0 !important;
+          overflow: visible !important; /* Scrollbar problemini çözen kritik kod */
+          height: auto !important;
+          max-height: none !important;
+        }
+
+        /* Scrollbar'ı tamamen gizle */
+        ::-webkit-scrollbar {
+          display: none !important;
         }
 
         .no-print { 
@@ -41,10 +50,11 @@
           width: 100% !important;
           max-width: none !important;
           margin: 0 !important;
-          padding: 0 !important;
+          padding: 20px !important; /* Boşluklar daraltıldı */
           box-shadow: none !important;
           border: none !important;
           break-inside: avoid;
+          overflow: visible !important;
         }
 
         /* Tablo genişlik ve taşma ayarları */
@@ -56,6 +66,7 @@
 
         th, td {
           word-wrap: break-word !important;
+          padding: 6px 4px !important; /* Satır boşlukları daraltıldı */
         }
 
         .print-page-break { 
@@ -64,10 +75,10 @@
           display: block !important; 
         }
         
-        /* Sidebar ve Header temizliği zaten no-print ile yapılıyor */
         main {
           margin: 0 !important;
           padding: 0 !important;
+          display: block !important;
         }
       }
 
@@ -75,14 +86,10 @@
         border: 1px solid #cbd5e1;
         border-radius: 2px;
         padding: 6px 10px;
-        font-size: 13px;
+        font-size: 12px;
         outline: none;
         width: 100%;
       }
-      .erp-input:focus { border-color: #3b82f6; ring: 1px #3b82f6; }
-      .erp-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-      .erp-table th { background: #f1f5f9; border: 1px solid #e2e8f0; padding: 10px; text-align: left; font-weight: 700; color: #475569; }
-      .erp-table td { border: 1px solid #e2e8f0; padding: 10px; }
     </style>
   <script type="importmap">
 {
