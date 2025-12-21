@@ -16,13 +16,10 @@ interface YearlyReportProps {
 
 const YearlyReport: React.FC<YearlyReportProps> = ({ entries, budgets, teams, projects }) => {
   const [filterYear, setFilterYear] = useState(2025);
-  const [reportType, setReportType] = useState('Yıllık Faaliyet Raporu');
 
-  // Filtrelenmiş Yıllık Veriler
   const yearlyEntries = useMemo(() => entries.filter(e => e.year === filterYear), [entries, filterYear]);
   const yearlyBudgets = useMemo(() => budgets.filter(b => b.year === filterYear), [budgets, filterYear]);
 
-  // Üst Kart Hesaplamaları
   const summary = useMemo(() => {
     const totalKg = yearlyEntries.reduce((acc, curr) => acc + curr.quantityKg, 0);
     const totalCost = yearlyBudgets.reduce((acc, curr) => acc + curr.amountTL, 0);
@@ -35,7 +32,6 @@ const YearlyReport: React.FC<YearlyReportProps> = ({ entries, budgets, teams, pr
     return { totalKg, totalCost, totalHours, avgEfficiency };
   }, [yearlyEntries, yearlyBudgets]);
 
-  // Ekip Bazlı Yıllık Matris Verisi
   const teamMatrix = useMemo(() => {
     return teams.map(team => {
       const tEntries = yearlyEntries.filter(e => e.teamId === team.id);
@@ -48,18 +44,23 @@ const YearlyReport: React.FC<YearlyReportProps> = ({ entries, budgets, teams, pr
       const efficiency = annualHours > 0 ? (annualKg / annualHours) : 0;
       const unitCost = annualKg > 0 ? (annualCost / annualKg) : 0;
 
-      // Aylık Dağılım
       const monthlyData = MONTHS.map(month => {
         const mEntries = tEntries.filter(e => e.month === month);
         const mBudget = tBudgets.find(b => b.month === month);
         const mKg = mEntries.reduce((a, c) => a + c.quantityKg, 0);
         const mCost = mBudget?.amountTL || 0;
+        const mPersonnel = mBudget?.personnelCount || 0;
+        const mHours = mBudget ? (mBudget.personnelCount * (mBudget.workingDays?.length || 0) * DAILY_WORKING_HOURS) : 0;
+        const mUnitCost = mKg > 0 ? (mCost / mKg) : 0;
         
         return {
           month,
           kg: mKg,
           cost: mCost,
-          hasData: mKg > 0 || mCost > 0
+          personnel: mPersonnel,
+          hours: mHours,
+          unitCost: mUnitCost,
+          hasData: mKg > 0 || mCost > 0 || mPersonnel > 0
         };
       });
 
@@ -76,155 +77,119 @@ const YearlyReport: React.FC<YearlyReportProps> = ({ entries, budgets, teams, pr
   }, [teams, yearlyEntries, yearlyBudgets]);
 
   return (
-    <div className="space-y-8 pb-20">
-      {/* Filtre Paneli */}
-      <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm no-print flex items-center justify-between gap-6">
-        <div className="flex items-center gap-12">
-          <div className="space-y-3">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-               <FileText size={14} className="text-blue-500" /> RAPOR KAPSAMI
-            </label>
-            <div className="relative">
-              <select 
-                className="appearance-none bg-slate-50 border border-slate-200 rounded-xl px-5 py-3 pr-12 text-xs font-black text-slate-700 outline-none w-64"
-                value={reportType}
-                onChange={e => setReportType(e.target.value)}
-              >
-                <option>Yıllık Faaliyet Raporu</option>
-                <option>Konsolide Ekip Özeti</option>
-              </select>
-              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-            </div>
-          </div>
-          <div className="space-y-3">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-               <Calendar size={14} className="text-blue-500" /> MALİ YIL
-            </label>
-            <div className="relative">
-              <select 
-                className="appearance-none bg-slate-50 border border-slate-200 rounded-xl px-5 py-3 pr-12 text-xs font-black text-slate-700 outline-none w-48"
-                value={filterYear}
-                onChange={e => setFilterYear(Number(e.target.value))}
-              >
-                {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
-              </select>
-              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-            </div>
+    <div className="space-y-4">
+      {/* FILTER PANEL */}
+      <div className="bg-white border border-slate-200 p-3 flex items-center justify-between no-print rounded">
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-black text-slate-400 uppercase">YIL SEÇİMİ:</span>
+            <select className="bg-slate-50 border border-slate-200 text-[11px] font-bold px-2 py-1 outline-none" value={filterYear} onChange={e => setFilterYear(Number(e.target.value))}>
+              {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
           </div>
         </div>
-        <button onClick={() => window.print()} className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 rounded-2xl font-black text-xs flex items-center gap-3 transition-all shadow-xl shadow-blue-500/20 active:scale-95">
-          <Printer size={18} /> YAZDIR (YATAY)
+        <button onClick={() => window.print()} className="bg-slate-900 text-white px-5 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center gap-2 rounded">
+          <Printer size={14} /> YILLIK RAPORU YAZDIR
         </button>
       </div>
 
-      {/* Rapor Kartı */}
-      <div className="bg-white p-12 rounded-[3.5rem] shadow-2xl border border-slate-100 report-card relative overflow-hidden print:p-4 print:rounded-none print:shadow-none print:border-none">
+      {/* REPORT AREA */}
+      <div className="bg-white p-6 border border-slate-300 report-card print:p-2 print:border-none print:shadow-none">
         {/* Header */}
-        <div className="relative z-10 flex justify-between items-start border-b-4 border-slate-900 pb-10 mb-12">
-          <div className="flex items-center gap-6">
-            <div className="w-16 h-16 bg-blue-600 rounded-3xl flex items-center justify-center text-white shadow-2xl print:shadow-none">
-              <Activity size={32} strokeWidth={3} />
+        <div className="flex justify-between items-end border-b-2 border-slate-900 pb-4 mb-6">
+          <div className="flex items-center gap-4">
+            <div className="p-2 bg-blue-600 text-white rounded">
+              <Activity size={24} />
             </div>
             <div>
-              <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase leading-none">PROANALİZ ENTERPRISE</h1>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.25em] mt-2 italic">Endüstriyel Verimlilik ve Performans Portalı</p>
+              <h1 className="text-xl font-black text-slate-900 tracking-tight uppercase leading-none">PROANALİZ ENTERPRISE</h1>
+              <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-1">Yıllık Faaliyet Konsolide Veritabanı</p>
             </div>
           </div>
           <div className="text-right">
-            <h2 className="text-2xl font-black text-slate-900 uppercase leading-none mb-3 tracking-tighter">{filterYear} YILI KURUMSAL FAALİYET ÖZETİ</h2>
-            <div className="inline-block bg-slate-900 text-white px-6 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest">
-              DÖNEM: 1 OCAK - 31 ARALIK {filterYear}
-            </div>
+            <h2 className="text-sm font-black text-slate-900 uppercase">{filterYear} YILLIK PERFORMANS ÖZETİ</h2>
+            <div className="text-[9px] font-bold text-slate-400 mt-1 uppercase italic tracking-widest tracking-tighter">KURUMSAL VERİ MERKEZİ ANALİZİ</div>
           </div>
         </div>
 
-        {/* Summary Stat Tiles */}
-        <div className="grid grid-cols-4 gap-6 mb-16 relative z-10 print:gap-2 print:mb-8">
-          <ReportStatTile label="YILLIK TOP. ÜRETİM" value={summary.totalKg.toLocaleString()} unit="KG" />
-          <ReportStatTile label="YILLIK TOP. MALİYET" value={summary.totalCost.toLocaleString()} unit="₺" />
-          <ReportStatTile label="YILLIK TOP. SAAT" value={Math.round(summary.totalHours).toLocaleString()} unit="Sa" />
-          <ReportStatTile label="ORTALAMA VERİM" value={summary.avgEfficiency.toFixed(2)} unit="KG/Sa" />
+        {/* STATS TILES */}
+        <div className="grid grid-cols-4 gap-3 mb-6">
+          <CompactStat label="YILLIK TOP. ÜRETİM" value={summary.totalKg.toLocaleString()} unit="KG" />
+          <CompactStat label="YILLIK TOP. MALİYET" value={summary.totalCost.toLocaleString()} unit="₺" />
+          <CompactStat label="YILLIK TOP. SAAT" value={Math.round(summary.totalHours).toLocaleString()} unit="Sa" />
+          <CompactStat label="ORTALAMA VERİM" value={summary.avgEfficiency.toFixed(2)} unit="KG/Sa" />
         </div>
 
-        {/* Main Matrix Table */}
-        <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-6 px-1 print:mb-4">
-            <div className="p-1.5 bg-blue-100 rounded-lg text-blue-600 print:hidden">
-              <LayoutGrid size={18} />
-            </div>
-            <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">VERİ MATRİSİ & PERFORMANS DETAYI</h3>
-            <div className="ml-auto text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">Birim: KG / TRY / Adam-Saat</div>
-          </div>
-
-          <div className="overflow-hidden rounded-3xl border border-slate-200 shadow-sm print:rounded-none print:shadow-none print:border-slate-300">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-[#0f172a] text-white text-[10px] font-black uppercase tracking-[0.15em] print:bg-slate-900 print:text-white">
-                  <th className="px-8 py-6 border-r border-slate-800 print:px-4 print:py-3">EKİP ADI</th>
-                  <th className="px-4 py-6 text-center border-r border-slate-800 print:py-3">YILLIK ÜRETİM</th>
-                  <th className="px-4 py-6 text-center border-r border-slate-800 print:py-3">YILLIK SAAT</th>
-                  <th className="px-4 py-6 text-center border-r border-slate-800 text-blue-400 print:text-blue-300 print:py-3">VERİM (KG/SA)</th>
-                  <th className="px-4 py-6 text-right print:py-3">BİRİM MALİYET</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {teamMatrix.map((team) => (
-                  <React.Fragment key={team.id}>
-                    <tr className="bg-white hover:bg-slate-50/50 transition-colors print:bg-white">
-                      <td className="px-8 py-5 border-r border-slate-100 print:px-4 print:py-3">
-                        <span className="text-[11px] font-black text-slate-900 uppercase tracking-tighter">{team.name}</span>
-                      </td>
-                      <td className="px-4 py-5 text-center text-xs font-black text-slate-800 border-r border-slate-100 print:py-3">{team.annualKg.toLocaleString()}</td>
-                      <td className="px-4 py-5 text-center text-xs font-bold text-slate-500 border-r border-slate-100 print:py-3">{Math.round(team.annualHours).toLocaleString()}</td>
-                      <td className="px-4 py-5 text-center text-xs font-black text-blue-600 border-r border-slate-100 print:py-3">{team.efficiency.toFixed(2)}</td>
-                      <td className="px-4 py-5 text-right text-xs font-black text-emerald-600 print:py-3">
-                        ₺{team.unitCost.toFixed(2)}
-                      </td>
-                    </tr>
-                    
-                    <tr>
-                      <td colSpan={5} className="px-8 py-6 bg-slate-50/30 border-b border-slate-100 print:px-4 print:py-3">
-                        <div className="grid grid-cols-6 gap-3 max-w-5xl mx-auto print:max-w-none print:gap-2">
-                          {team.monthlyData.map((m) => (
-                            <div key={m.month} className={`px-4 py-3 rounded-2xl border transition-all text-center flex flex-col justify-center min-h-[70px] print:rounded-lg print:p-1 print:min-h-0 ${
-                              m.hasData 
-                              ? 'bg-white border-blue-200 shadow-sm print:shadow-none print:border-slate-200' 
-                              : 'bg-transparent border-slate-100 opacity-20 print:hidden'
-                            }`}>
-                              <span className="text-[9px] font-black text-slate-400 uppercase mb-1">{m.month.substr(0,3).toUpperCase()}</span>
-                              {m.hasData && (
-                                <>
-                                  <div className="text-[10px] font-black text-slate-900">{m.kg.toLocaleString()}</div>
-                                  <div className="text-[8px] font-bold text-emerald-500">₺{(m.cost / 1000).toFixed(1)}k</div>
-                                </>
-                              )}
+        {/* MAIN TABLE */}
+        <div className="border border-slate-200 overflow-hidden">
+          <table className="w-full text-left border-collapse erp-table">
+            <thead>
+              <tr className="bg-slate-900 text-white">
+                <th className="w-[180px]">EKİP PERFORMANS</th>
+                <th className="text-center">YILLIK ÜRETİM</th>
+                <th className="text-center">YILLIK SAAT</th>
+                <th className="text-center">VERİM (KG/SA)</th>
+                <th className="text-right">BİRİM MALİYET</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {teamMatrix.map((team) => (
+                <React.Fragment key={team.id}>
+                  <tr className="bg-slate-50 font-bold">
+                    <td className="px-3 py-1.5 text-[10px] text-slate-900">{team.name.toUpperCase()}</td>
+                    <td className="text-center text-slate-700">{team.annualKg.toLocaleString()}</td>
+                    <td className="text-center text-slate-500">{Math.round(team.annualHours).toLocaleString()}</td>
+                    <td className="text-center text-blue-700">{team.efficiency.toFixed(2)}</td>
+                    <td className="text-right text-emerald-700">₺{team.unitCost.toFixed(2)}</td>
+                  </tr>
+                  <tr>
+                    <td colSpan={5} className="p-2 bg-white">
+                      <div className="grid grid-cols-6 gap-2">
+                        {team.monthlyData.map((m) => m.hasData && (
+                          <div key={m.month} className="bg-slate-50 border border-slate-100 p-2 rounded flex flex-col gap-1">
+                            <div className="flex justify-between items-center border-b border-slate-200 pb-1 mb-1">
+                              <span className="text-[8px] font-black text-slate-400 uppercase">{m.month.substr(0,3)}</span>
+                              <span className="text-[8px] font-bold text-blue-600 bg-blue-50 px-1 rounded">{m.personnel} P.</span>
                             </div>
-                          ))}
-                        </div>
-                      </td>
-                    </tr>
-                  </React.Fragment>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                            <div className="flex justify-between text-[8px]">
+                              <span className="text-slate-400">KG:</span>
+                              <span className="font-bold text-slate-700">{m.kg.toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between text-[8px]">
+                              <span className="text-slate-400">SAAT:</span>
+                              <span className="font-bold text-slate-700">{Math.round(m.hours)}</span>
+                            </div>
+                            <div className="flex justify-between text-[8px]">
+                              <span className="text-slate-400">B.MLY:</span>
+                              <span className="font-bold text-emerald-600">₺{m.unitCost.toFixed(2)}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </td>
+                  </tr>
+                </React.Fragment>
+              ))}
+            </tbody>
+          </table>
         </div>
 
-        <div className="mt-16 pt-8 border-t border-slate-100 hidden print:flex justify-between text-[8px] font-bold text-slate-400 uppercase tracking-widest">
-           <span>ProAnaliz Enterprise Cloud Report Infrastructure</span>
-           <span>Sistem Onaylı Elektronik Çıktı - {new Date().toLocaleString()}</span>
+        {/* Footer */}
+        <div className="mt-8 pt-4 border-t border-slate-100 flex justify-between text-[7px] font-black text-slate-300 uppercase tracking-widest italic">
+           <span>YILLIK KONSOLİDE RAPORLAMA ÜNİTESİ - PA-ERP-CORE</span>
+           <span>ÇIKTI TARİHİ: {new Date().toLocaleString('tr-TR')}</span>
         </div>
       </div>
     </div>
   );
 };
 
-const ReportStatTile = ({ label, value, unit }: { label: string, value: string, unit: string }) => (
-  <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col items-start relative overflow-hidden group hover:border-blue-300 transition-all print:p-4 print:rounded-xl print:shadow-none">
-    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 relative z-10 print:mb-1">{label}</span>
-    <div className="flex items-baseline gap-2 relative z-10">
-      <h4 className="text-2xl font-black text-slate-900 tracking-tighter print:text-xl">{value}</h4>
-      <span className="text-[11px] font-black text-slate-400 uppercase print:text-[9px]">{unit}</span>
+const CompactStat = ({ label, value, unit }: any) => (
+  <div className="bg-white border border-slate-200 p-3 rounded flex flex-col items-center text-center">
+    <span className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{label}</span>
+    <div className="flex items-baseline gap-1">
+      <span className="text-sm font-black text-slate-900 tracking-tighter">{value}</span>
+      <span className="text-[8px] font-bold text-slate-400">{unit}</span>
     </div>
   </div>
 );
