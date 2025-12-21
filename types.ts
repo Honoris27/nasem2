@@ -1,4 +1,3 @@
-
 export enum ProductionType {
   IMALAT = 'İmalat',
   KAYNAK = 'Kaynak',
@@ -29,6 +28,7 @@ export interface Budget {
   month: string;
   personnelCount: number;
   amountTL: number;
+  workingDays?: number[]; // Seçilen günlerin numaraları (örn: [1, 2, 5, 6...])
 }
 
 export interface ProductionEntry {
@@ -64,4 +64,6 @@ export const MONTHS = [
 
 export const YEARS = Array.from({ length: 26 }, (_, i) => 2025 + i);
 
-export const WORKING_HOURS_PER_MONTH = 180;
+// Günlük standart çalışma saati (Genelde 8 veya 9 saat olarak alınır)
+export const DAILY_WORKING_HOURS = 8.5;
+export const WORKING_HOURS_PER_MONTH = 180; // Default fallback

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { 
   Team, Project, Budget, ProductionEntry, 
-  ProductionType, MONTHS, YEARS, WORKING_HOURS_PER_MONTH, ReportTemplate
+  ProductionType, MONTHS, YEARS, DAILY_WORKING_HOURS, ReportTemplate
 } from '../types';
 import { 
   Printer, Calculator, Target, FileText
@@ -50,7 +50,12 @@ const Reports: React.FC<ReportsProps> = ({ entries, budgets, teams, projects, te
     const totalKg = teamEntries.reduce((acc, curr) => acc + curr.quantityKg, 0);
     const totalPersonnel = teamBudgets.reduce((acc, curr) => acc + curr.personnelCount, 0);
     const totalBudgetAmount = teamBudgets.reduce((acc, curr) => acc + curr.amountTL, 0);
-    const manHours = totalPersonnel * WORKING_HOURS_PER_MONTH;
+    
+    // Dinamik Adam-Saat Hesabı: Personel * Seçilen Günler * Standart Saat
+    const manHours = teamBudgets.reduce((acc, curr) => {
+      const days = curr.workingDays?.length || 22; // Seçilmemişse varsayılan 22 gün
+      return acc + (curr.personnelCount * days * DAILY_WORKING_HOURS);
+    }, 0);
 
     const typeBreakdown = {
       [ProductionType.IMALAT]: teamEntries.filter(e => e.type === ProductionType.IMALAT).reduce((acc, curr) => acc + curr.quantityKg, 0),
@@ -85,7 +90,6 @@ const Reports: React.FC<ReportsProps> = ({ entries, budgets, teams, projects, te
       list = projectTeams.map(t => calculateTeamStats(t.id, selectedProjectId));
     }
     
-    // Explicit type guard to satisfy TS compiler that item is not null
     return list.filter((item): item is NonNullable<typeof item> => item !== null);
   }, [entries, budgets, teams, filterYear, filterMonth, viewMode, selectedTeamId, selectedProjectId]);
 
