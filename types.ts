@@ -64,6 +64,6 @@ export const MONTHS = [
 
 export const YEARS = Array.from({ length: 26 }, (_, i) => 2025 + i);
 
-// Günlük standart çalışma saati (Genelde 8 veya 9 saat olarak alınır)
-export const DAILY_WORKING_HOURS = 8.5;
-export const WORKING_HOURS_PER_MONTH = 180; // Default fallback
+// Günlük standart çalışma saati (Kullanıcı isteği üzerine 7.5 saat olarak güncellendi)
+export const DAILY_WORKING_HOURS = 7.5;
+export const WORKING_HOURS_PER_MONTH = 165; // 22 gün * 7.5 saat baz alındığında
