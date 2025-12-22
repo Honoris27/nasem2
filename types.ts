@@ -21,6 +21,15 @@ export interface Project {
   name: string;
 }
 
+export interface ReportTheme {
+  primary: string;
+  secondary: string;
+  accent: string;
+  imalat: string;
+  kaynak: string;
+  temizlik: string;
+}
+
 export interface Budget {
   id: string;
   teamId: string;
@@ -53,6 +62,7 @@ export interface ReportTemplate {
   fields: ReportField[];
   showCharts: boolean;
   headerTitle: string;
+  theme: ReportTheme;
 }
 
 export type ViewType = 'dashboard' | 'entry' | 'budgets' | 'settings' | 'reports' | 'yearly' | 'project-report';
@@ -68,3 +78,12 @@ export const YEARS = Array.from({ length: 26 }, (_, i) => 2025 + i);
 export const DAILY_WORKING_HOURS = 7.5;
 // Aylık standart çalışma saati (30 gün üzerinden planlama için)
 export const WORKING_HOURS_PER_MONTH = 225; // 30 gün * 7.5 saat baz alındığında
+
+export const DEFAULT_THEME: ReportTheme = {
+  primary: '#0f172a', // Slate 900
+  secondary: '#2563eb', // Blue 600
+  accent: '#10b981', // Emerald 500
+  imalat: '#3b82f6', // Blue 500
+  kaynak: '#10b981', // Emerald 500
+  temizlik: '#f59e0b', // Amber 500
+};

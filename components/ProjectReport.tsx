@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { 
   Team, Project, Budget, ProductionEntry, 
-  ProductionType, MONTHS, YEARS, DAILY_WORKING_HOURS
+  ProductionType, MONTHS, YEARS, DAILY_WORKING_HOURS, ReportTheme
 } from '../types';
 import { 
   Printer, LayoutGrid, Users, Briefcase, ChevronDown, Activity, Calendar, Filter
@@ -12,9 +12,10 @@ interface ProjectReportProps {
   budgets: Budget[];
   teams: Team[];
   projects: Project[];
+  theme: ReportTheme;
 }
 
-const ProjectReport: React.FC<ProjectReportProps> = ({ entries, budgets, teams, projects }) => {
+const ProjectReport: React.FC<ProjectReportProps> = ({ entries, budgets, teams, projects, theme }) => {
   const [filterYear, setFilterYear] = useState(2025);
   const [filterMonth, setFilterMonth] = useState('Ocak');
   const [selectedProjectId, setSelectedProjectId] = useState('');
@@ -35,24 +36,20 @@ const ProjectReport: React.FC<ProjectReportProps> = ({ entries, budgets, teams, 
     return uniqueTeamIds.map(tId => {
       const team = teams.find(t => t.id === tId);
       
-      // Ekibin bu projedeki üretimi
       const teamProjectEntries = filteredEntries.filter(e => e.teamId === tId);
       const projectImalat = teamProjectEntries.filter(e => e.type === ProductionType.IMALAT).reduce((a, c) => a + c.quantityKg, 0);
       const projectKaynak = teamProjectEntries.filter(e => e.type === ProductionType.KAYNAK).reduce((a, c) => a + c.quantityKg, 0);
       const projectTemizlik = teamProjectEntries.filter(e => e.type === ProductionType.TEMIZLIK).reduce((a, c) => a + c.quantityKg, 0);
       const projectTotal = projectImalat + projectKaynak + projectTemizlik;
 
-      // Ekibin o ayki TÜM üretimi (Oranlama için gerekli)
       const teamAllMonthEntries = entries.filter(e => e.teamId === tId && e.year === filterYear && e.month === filterMonth);
       const teamTotalMonthKg = teamAllMonthEntries.reduce((a, c) => a + c.quantityKg, 0);
 
-      // Ekibin bütçesi ve toplam kapasitesi
       const teamBudget = budgets.find(b => b.teamId === tId && b.year === filterYear && b.month === filterMonth);
       const teamTotalMonthHours = teamBudget ? (teamBudget.personnelCount * (teamBudget.workingDays?.length || 0) * DAILY_WORKING_HOURS) : 0;
       const teamTotalMonthCost = teamBudget?.amountTL || 0;
       const personnel = teamBudget?.personnelCount || 0;
 
-      // ORANLAMA: Bu projenin ekibin o ayki toplam KG üretimindeki payı
       const projectRatio = teamTotalMonthKg > 0 ? (projectTotal / teamTotalMonthKg) : 0;
       const projectAllocatedHours = teamTotalMonthHours * projectRatio;
       const projectAllocatedCost = teamTotalMonthCost * projectRatio;
@@ -81,8 +78,7 @@ const ProjectReport: React.FC<ProjectReportProps> = ({ entries, budgets, teams, 
 
   return (
     <div className="space-y-4">
-      {/* FILTER PANEL */}
-      <div className="bg-white border border-slate-200 p-3 flex items-center justify-between no-print rounded">
+      <div className="bg-white border border-slate-200 p-3 flex items-center justify-between no-print rounded shadow-sm">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-black text-slate-400 uppercase">FİLTRE:</span>
@@ -98,17 +94,19 @@ const ProjectReport: React.FC<ProjectReportProps> = ({ entries, budgets, teams, 
             </select>
           </div>
         </div>
-        <button onClick={() => window.print()} className="bg-slate-900 text-white px-5 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center gap-2 rounded">
+        <button 
+          onClick={() => window.print()} 
+          className="text-white px-5 py-2 text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all flex items-center gap-2 rounded"
+          style={{ backgroundColor: theme.primary }}
+        >
           <Printer size={14} /> PROJE RAPORU YAZDIR
         </button>
       </div>
 
-      {/* REPORT AREA */}
       <div className="bg-white p-6 border border-slate-300 report-card print:p-2 print:border-none print:shadow-none">
-        {/* Header */}
-        <div className="flex justify-between items-end border-b-2 border-slate-900 pb-4 mb-6">
+        <div className="flex justify-between items-end pb-4 mb-6" style={{ borderBottom: `2px solid ${theme.primary}` }}>
           <div className="flex items-center gap-4">
-            <div className="p-2 bg-indigo-600 text-white rounded">
+            <div className="p-2 text-white rounded" style={{ backgroundColor: theme.secondary }}>
               <Briefcase size={24} />
             </div>
             <div>
@@ -122,23 +120,21 @@ const ProjectReport: React.FC<ProjectReportProps> = ({ entries, budgets, teams, 
           </div>
         </div>
 
-        {/* SUMMARY TILES */}
         <div className="grid grid-cols-3 gap-3 mb-6">
-          <CompactStat label="PROJE TOP. ÜRETİM" value={summary.projectTotalKg.toLocaleString()} unit="KG" />
-          <CompactStat label="KATILAN EKİP" value={summary.teamCount.toString()} unit="BİRİM" />
-          <CompactStat label="ORT. ÜRETİM / EKİP" value={Math.round(summary.avgPerTeam).toLocaleString()} unit="KG" />
+          <CompactStat label="PROJE TOP. ÜRETİM" value={summary.projectTotalKg.toLocaleString()} unit="KG" theme={theme} />
+          <CompactStat label="KATILAN EKİP" value={summary.teamCount.toString()} unit="BİRİM" theme={theme} />
+          <CompactStat label="ORT. ÜRETİM / EKİP" value={Math.round(summary.avgPerTeam).toLocaleString()} unit="KG" theme={theme} />
         </div>
 
-        {/* MAIN TABLE */}
-        <div className="border border-slate-200 overflow-hidden">
+        <div className="border border-slate-200 overflow-hidden rounded shadow-sm">
           <table className="w-full text-left border-collapse table-fixed erp-table">
             <thead>
-              <tr className="bg-slate-900 text-white">
+              <tr className="text-white" style={{ backgroundColor: theme.primary }}>
                 <th className="w-[180px]">KATILIMCI EKİPLER</th>
                 <th className="text-center">İMALAT</th>
                 <th className="text-center">KAYNAK</th>
                 <th className="text-center">TEMİZLİK</th>
-                <th className="text-center bg-slate-800">TOPLAM (KG)</th>
+                <th className="text-center opacity-90">TOPLAM (KG)</th>
                 <th className="text-center w-[70px]">PROJE SAATİ</th>
                 <th className="text-right w-[90px]">B. MALİYET</th>
               </tr>
@@ -148,14 +144,14 @@ const ProjectReport: React.FC<ProjectReportProps> = ({ entries, budgets, teams, 
                 <tr key={data.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-3 py-1.5 flex items-center justify-between">
                     <span className="text-[10px] font-black text-slate-900 uppercase">{data.name}</span>
-                    <span className="text-[8px] bg-blue-100 text-blue-700 px-1 rounded">({data.personnel} P.)</span>
+                    <span className="text-[8px] px-1 rounded" style={{ backgroundColor: `${theme.secondary}15`, color: theme.secondary }}>({data.personnel} P.)</span>
                   </td>
-                  <td className="text-center text-slate-500">{data.imalat.toLocaleString()}</td>
-                  <td className="text-center text-slate-500">{data.kaynak.toLocaleString()}</td>
-                  <td className="text-center text-slate-500">{data.temizlik.toLocaleString()}</td>
+                  <td className="text-center text-slate-500" style={{ color: theme.imalat }}>{data.imalat.toLocaleString()}</td>
+                  <td className="text-center text-slate-500" style={{ color: theme.kaynak }}>{data.kaynak.toLocaleString()}</td>
+                  <td className="text-center text-slate-500" style={{ color: theme.temizlik }}>{data.temizlik.toLocaleString()}</td>
                   <td className="text-center font-bold text-slate-900 bg-slate-100/50">{data.total.toLocaleString()}</td>
-                  <td className="text-center text-blue-600 font-black">{Math.round(data.hours).toLocaleString()}</td>
-                  <td className="text-right text-emerald-700 font-bold">₺{data.unitCost.toFixed(2)}</td>
+                  <td className="text-center font-black" style={{ color: theme.secondary }}>{Math.round(data.hours).toLocaleString()}</td>
+                  <td className="text-right font-bold" style={{ color: theme.accent }}>₺{data.unitCost.toFixed(2)}</td>
                 </tr>
               ))}
               {matrixData.length === 0 && (
@@ -171,8 +167,9 @@ const ProjectReport: React.FC<ProjectReportProps> = ({ entries, budgets, teams, 
   );
 };
 
-const CompactStat = ({ label, value, unit }: any) => (
-  <div className="bg-white border border-slate-200 p-3 rounded flex flex-col items-center text-center">
+const CompactStat = ({ label, value, unit, theme }: any) => (
+  <div className="bg-white border border-slate-200 p-3 rounded flex flex-col items-center text-center relative overflow-hidden">
+    <div className="absolute top-0 left-0 w-full h-[2px]" style={{ backgroundColor: theme.accent }}></div>
     <span className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{label}</span>
     <div className="flex items-baseline gap-1">
       <span className="text-sm font-black text-slate-900 tracking-tighter">{value}</span>

@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Team, Project, Budget, ProductionEntry, ProductionType } from '../types';
+import { Team, Project, Budget, ProductionEntry, ProductionType, ReportTheme } from '../types';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend
@@ -11,9 +11,10 @@ interface DashboardProps {
   budgets: Budget[];
   teams: Team[];
   projects: Project[];
+  theme: ReportTheme;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ entries, budgets, teams, projects }) => {
+const Dashboard: React.FC<DashboardProps> = ({ entries, budgets, teams, projects, theme }) => {
   const stats = useMemo(() => {
     const totalKg = entries.reduce((acc, curr) => acc + curr.quantityKg, 0);
     const totalCost = budgets.reduce((acc, curr) => acc + curr.amountTL, 0);
@@ -39,10 +40,10 @@ const Dashboard: React.FC<DashboardProps> = ({ entries, budgets, teams, projects
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-4 gap-4">
-        <StatCard title="TOPLAM ÜRETİM" value={stats.totalKg.toLocaleString()} unit="KG" icon={<Scale size={14} />} color="blue" />
-        <StatCard title="TOPLAM MALİYET" value={stats.totalCost.toLocaleString()} unit="₺" icon={<DollarSign size={14} />} color="emerald" />
-        <StatCard title="GENEL VERİM" value={stats.avgPerformance} unit="KG/KİŞİ" icon={<Zap size={14} />} color="amber" />
-        <StatCard title="BİRİM MALİYET" value={stats.costPerKg} unit="₺/KG" icon={<Activity size={14} />} color="slate" />
+        <StatCard title="TOPLAM ÜRETİM" value={stats.totalKg.toLocaleString()} unit="KG" icon={<Scale size={14} />} color={theme.secondary} />
+        <StatCard title="TOPLAM MALİYET" value={stats.totalCost.toLocaleString()} unit="₺" icon={<DollarSign size={14} />} color={theme.accent} />
+        <StatCard title="GENEL VERİM" value={stats.avgPerformance} unit="KG/KİŞİ" icon={<Zap size={14} />} color="#f59e0b" />
+        <StatCard title="BİRİM MALİYET" value={stats.costPerKg} unit="₺/KG" icon={<Activity size={14} />} color={theme.primary} />
       </div>
 
       <div className="grid grid-cols-3 gap-4">
@@ -58,7 +59,7 @@ const Dashboard: React.FC<DashboardProps> = ({ entries, budgets, teams, projects
                  <XAxis dataKey="name" tick={{fontSize: 9, fontWeight: 700, fill: '#94a3b8'}} axisLine={false} tickLine={false} />
                  <YAxis tick={{fontSize: 9, fontWeight: 700, fill: '#94a3b8'}} axisLine={false} tickLine={false} />
                  <Tooltip cursor={{fill: '#f8fafc'}} contentStyle={{fontSize: '10px', fontWeight: 'bold', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
-                 <Bar dataKey="perf" fill="#3b82f6" radius={[2, 2, 0, 0]} barSize={24} />
+                 <Bar dataKey="perf" fill={theme.secondary} radius={[2, 2, 0, 0]} barSize={24} />
                </BarChart>
              </ResponsiveContainer>
            </div>
@@ -77,9 +78,9 @@ const Dashboard: React.FC<DashboardProps> = ({ entries, budgets, teams, projects
                    ]}
                    innerRadius={50} outerRadius={70} paddingAngle={4} dataKey="value"
                  >
-                   <Cell fill="#3b82f6" />
-                   <Cell fill="#10b981" />
-                   <Cell fill="#f59e0b" />
+                   <Cell fill={theme.imalat} />
+                   <Cell fill={theme.kaynak} />
+                   <Cell fill={theme.temizlik} />
                  </Pie>
                  <Tooltip />
                  <Legend iconType="circle" wrapperStyle={{fontSize: '9px', fontWeight: '800', textTransform: 'uppercase'}} />
@@ -93,10 +94,9 @@ const Dashboard: React.FC<DashboardProps> = ({ entries, budgets, teams, projects
 };
 
 const StatCard = ({ title, value, unit, icon, color }: any) => {
-  const colors: any = { blue: 'bg-blue-600', emerald: 'bg-emerald-600', amber: 'bg-amber-600', slate: 'bg-slate-700' };
   return (
     <div className="erp-card p-4 flex flex-col items-start relative overflow-hidden">
-      <div className={`absolute top-0 right-0 w-1 h-full ${colors[color]}`}></div>
+      <div className="absolute top-0 right-0 w-1 h-full" style={{ backgroundColor: color }}></div>
       <div className="text-slate-300 mb-2">{icon}</div>
       <span className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{title}</span>
       <div className="flex items-baseline gap-1">

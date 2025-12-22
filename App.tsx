@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Team, Project, Budget, ProductionEntry, ViewType, UserRole, ReportTemplate
+  Team, Project, Budget, ProductionEntry, ViewType, UserRole, ReportTemplate, DEFAULT_THEME
 } from './types';
 import { ICONS } from './constants';
 import { supabase } from './supabase';
@@ -49,13 +49,21 @@ const App: React.FC = () => {
         if (pwSetting) setViewerPassword(pwSetting.value);
 
         const templateSetting = settingsData?.find(s => s.key === 'report_template');
-        if (templateSetting) setTemplates(JSON.parse(templateSetting.value));
-        else {
+        if (templateSetting) {
+          const parsed = JSON.parse(templateSetting.value);
+          // Ensure each template has a theme
+          const sanitized = parsed.map((t: any) => ({
+            ...t,
+            theme: t.theme || DEFAULT_THEME
+          }));
+          setTemplates(sanitized);
+        } else {
           setTemplates([{
             id: 'team',
             name: 'Standart ERP Şablonu',
             showCharts: true,
             headerTitle: 'PERSONEL VE ÜRETİM ANALİZ RAPORU',
+            theme: DEFAULT_THEME,
             fields: [
               { id: 'personnel', label: 'Aktif Personel', visible: true },
               { id: 'budget', label: 'Toplam Hakediş', visible: true },
@@ -100,6 +108,16 @@ const App: React.FC = () => {
   }
 
   if (!userRole) return <Login onLogin={setUserRole} viewerPassword={viewerPassword} />;
+
+  // Safety fallback for template
+  const activeTemplate = templates.find(t => t.id === 'team') || templates[0] || {
+    id: 'team',
+    headerTitle: 'PERSONEL VE ÜRETİM ANALİZ RAPORU',
+    theme: DEFAULT_THEME,
+    fields: []
+  };
+
+  const currentTheme = activeTemplate.theme || DEFAULT_THEME;
 
   return (
     <div className="flex h-screen bg-[#f1f5f9] overflow-hidden">
@@ -163,7 +181,7 @@ const App: React.FC = () => {
 
         <div className="flex-1 overflow-y-auto p-4 print:p-0">
           <div className="max-w-[1400px] mx-auto w-full">
-            {activeView === 'dashboard' && <Dashboard entries={entries} budgets={budgets} teams={teams} projects={projects} />}
+            {activeView === 'dashboard' && <Dashboard entries={entries} budgets={budgets} teams={teams} projects={projects} theme={currentTheme} />}
             {activeView === 'entry' && <DataEntry teams={teams} projects={projects} onAddEntry={async (e) => {
               const { data } = await supabase.from('entries').insert([e]).select();
               if (data) setEntries([...entries, data[0]]);
@@ -178,9 +196,9 @@ const App: React.FC = () => {
               await supabase.from('budgets').delete().eq('id', id);
               setBudgets(budgets.filter(b => b.id !== id));
             }} />}
-            {activeView === 'reports' && <Reports entries={entries} budgets={budgets} teams={teams} projects={projects} template={templates[0]} />}
-            {activeView === 'yearly' && <YearlyReport entries={entries} budgets={budgets} teams={teams} projects={projects} />}
-            {activeView === 'project-report' && <ProjectReport entries={entries} budgets={budgets} teams={teams} projects={projects} />}
+            {activeView === 'reports' && <Reports entries={entries} budgets={budgets} teams={teams} projects={projects} template={activeTemplate} />}
+            {activeView === 'yearly' && <YearlyReport entries={entries} budgets={budgets} teams={teams} projects={projects} theme={currentTheme} />}
+            {activeView === 'project-report' && <ProjectReport entries={entries} budgets={budgets} teams={teams} projects={projects} theme={currentTheme} />}
             {activeView === 'settings' && (
                <SettingsView 
                   teams={teams} 

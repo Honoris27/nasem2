@@ -1,10 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { Team, Project, ReportTemplate } from '../types';
+import { Team, Project, ReportTemplate, ReportTheme, DEFAULT_THEME } from '../types';
 import { ICONS } from '../constants';
 import { supabase } from '../supabase';
 import { 
   Download, Upload, ShieldCheck, Key, Eye, EyeOff, 
-  Settings2, RefreshCcw, Trash2, AlertTriangle, FileBarChart, GripVertical, CheckCircle2, XCircle
+  Settings2, RefreshCcw, Trash2, AlertTriangle, FileBarChart, GripVertical, CheckCircle2, XCircle,
+  Palette, Pipette, Layout
 } from 'lucide-react';
 
 interface SettingsViewProps {
@@ -20,16 +21,37 @@ interface SettingsViewProps {
   onDeleteProject: (id: string) => void;
 }
 
+const PALETTES = [
+  { name: 'Enterprise Blue', theme: DEFAULT_THEME },
+  { name: 'Industrial Orange', theme: { ...DEFAULT_THEME, secondary: '#ea580c', imalat: '#f97316' } },
+  { name: 'Deep Emerald', theme: { ...DEFAULT_THEME, secondary: '#059669', imalat: '#10b981' } },
+  { name: 'Midnight Slate', theme: { ...DEFAULT_THEME, secondary: '#475569', primary: '#1e293b' } },
+  { name: 'Corporate Purple', theme: { ...DEFAULT_THEME, secondary: '#7c3aed', accent: '#c026d3' } },
+];
+
 const SettingsView: React.FC<SettingsViewProps> = ({ 
   teams, projects, viewerPassword, templates, onUpdateTemplates,
   onUpdateViewerPassword, onAddTeam, onAddProject, onDeleteTeam, onDeleteProject 
 }) => {
-  const [activeTab, setActiveTab] = useState<'general' | 'templates'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'templates' | 'theme'>('general');
   const [newTeam, setNewTeam] = useState('');
   const [newProject, setNewProject] = useState('');
   const [tempPassword, setTempPassword] = useState(viewerPassword);
   const [showPassword, setShowPassword] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const currentTemplate = templates.find(t => t.id === 'team') || templates[0];
+  const currentTheme = currentTemplate.theme || DEFAULT_THEME;
+
+  const updateTheme = (newTheme: Partial<ReportTheme>) => {
+    const updated = templates.map(t => {
+      if (t.id === 'team') {
+        return { ...t, theme: { ...currentTheme, ...newTheme } };
+      }
+      return t;
+    });
+    onUpdateTemplates(updated);
+  };
 
   const toggleFieldVisibility = (fieldId: string) => {
     const updated = templates.map(t => {
@@ -85,8 +107,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({
       try {
         const json = JSON.parse(event.target?.result as string);
         if (confirm('Dikkat! Mevcut verileriniz silinecek ve yedek yüklenecektir. Emin misiniz?')) {
-          // Yedek yükleme mantığı Supabase üzerinde de temizlik gerektirir.
-          // Bu basit versiyon sadece lokal ayarları etkiler; gerçek ERP'de SQL temizliği yapılır.
           alert('Yedek veriler başarıyla okundu. (Bulut veritabanı senkronizasyonu için lütfen yönetici ile iletişime geçin)');
           window.location.reload(); 
         }
@@ -130,9 +150,15 @@ const SettingsView: React.FC<SettingsViewProps> = ({
         >
           Rapor Şablonları
         </button>
+        <button 
+          onClick={() => setActiveTab('theme')}
+          className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'theme' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+        >
+          Görünüm ve Tema
+        </button>
       </div>
 
-      {activeTab === 'general' ? (
+      {activeTab === 'general' && (
         <div className="space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
@@ -204,13 +230,12 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                 <Trash2 size={24} />
                 Sistemi Sıfırla
               </button>
-              <p className="mt-4 text-[9px] text-red-400 font-bold uppercase text-center leading-relaxed">
-                <AlertTriangle size={10} className="inline mr-1" /> Tüm ekip, proje ve üretim kayıtlarını kalıcı olarak siler.
-              </p>
             </div>
           </div>
         </div>
-      ) : (
+      )}
+
+      {activeTab === 'templates' && (
         <div className="space-y-6">
           <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-200">
             <div className="flex items-center justify-between mb-10">
@@ -227,7 +252,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-3">Ana Sayfa Başlığı (Print Header)</label>
               <input 
                 type="text" 
-                value={templates[0].headerTitle}
+                value={currentTemplate.headerTitle}
                 onChange={(e) => updateHeaderTitle(e.target.value)}
                 className="w-full p-5 bg-white border border-slate-200 rounded-2xl text-xl font-black uppercase outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
                 placeholder="Örn: EKİP PERFORMANS ANALİZİ"
@@ -235,7 +260,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {templates[0].fields.map((field) => (
+              {currentTemplate.fields.map((field) => (
                 <div key={field.id} className={`p-8 rounded-[2.5rem] border-2 transition-all flex flex-col gap-4 ${field.visible ? 'border-indigo-100 bg-white shadow-md' : 'border-slate-50 bg-slate-50/50 opacity-60'}`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -262,14 +287,68 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      )}
 
-            <div className="mt-12 p-8 bg-slate-900 rounded-[3rem] text-white flex items-center gap-6">
-               <div className="p-4 bg-white/10 rounded-3xl">
-                  <FileBarChart size={32} className="text-indigo-400" />
-               </div>
+      {activeTab === 'theme' && (
+        <div className="space-y-6">
+          <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-200">
+             <div className="flex items-center justify-between mb-10">
                <div>
-                  <h4 className="text-xl font-black uppercase">Otomatik Senkronizasyon</h4>
-                  <p className="text-sm text-slate-400 font-medium max-w-2xl">Yaptığınız değişiklikler raporlar sayfasındaki hem ekran görünümünü hem de yazıcı çıktılarını anlık olarak günceller. Başlıklar ve etiketler seçilen dile göre optimize edilmelidir.</p>
+                  <h3 className="text-3xl font-black text-slate-900 uppercase tracking-tight">Kurumsal Kimlik & Tema</h3>
+                  <p className="text-xs font-bold text-slate-400 mt-2 uppercase tracking-widest">Rapor ve Dashboard Renklerini Özelleştirin</p>
+               </div>
+               <div className="p-4 bg-emerald-50 text-emerald-600 rounded-3xl">
+                  <Palette size={40} />
+               </div>
+            </div>
+
+            <div className="mb-10">
+               <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 block">Hazır Paletler</label>
+               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                  {PALETTES.map((p) => (
+                    <button 
+                      key={p.name}
+                      onClick={() => updateTheme(p.theme)}
+                      className="group flex flex-col items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-200 hover:bg-white hover:border-emerald-300 transition-all"
+                    >
+                       <div className="flex gap-1">
+                          <div className="w-4 h-4 rounded-full" style={{ backgroundColor: p.theme.primary }}></div>
+                          <div className="w-4 h-4 rounded-full" style={{ backgroundColor: p.theme.secondary }}></div>
+                          <div className="w-4 h-4 rounded-full" style={{ backgroundColor: p.theme.accent }}></div>
+                       </div>
+                       <span className="text-[10px] font-black text-slate-600 uppercase tracking-tighter text-center">{p.name}</span>
+                    </button>
+                  ))}
+               </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+               <ThemeSection title="Ana Renkler">
+                  <ColorPicker label="Birincil (Header)" value={currentTheme.primary} onChange={(v) => updateTheme({ primary: v })} />
+                  <ColorPicker label="İkincil (Vurgu)" value={currentTheme.secondary} onChange={(v) => updateTheme({ secondary: v })} />
+                  <ColorPicker label="Aksan (İkonlar)" value={currentTheme.accent} onChange={(v) => updateTheme({ accent: v })} />
+               </ThemeSection>
+
+               <ThemeSection title="Üretim Tipleri">
+                  <ColorPicker label="İmalat Rengi" value={currentTheme.imalat} onChange={(v) => updateTheme({ imalat: v })} />
+                  <ColorPicker label="Kaynak Rengi" value={currentTheme.kaynak} onChange={(v) => updateTheme({ kaynak: v })} />
+                  <ColorPicker label="Temizlik Rengi" value={currentTheme.temizlik} onChange={(v) => updateTheme({ temizlik: v })} />
+               </ThemeSection>
+
+               <div className="bg-slate-900 p-8 rounded-[2rem] text-white flex flex-col justify-center gap-4">
+                  <Layout size={32} className="text-emerald-400" />
+                  <h4 className="text-lg font-black uppercase leading-tight">Canlı Önizleme</h4>
+                  <div className="space-y-2 opacity-80">
+                    <div className="h-4 w-full rounded" style={{ backgroundColor: currentTheme.primary }}></div>
+                    <div className="flex gap-2">
+                       <div className="h-8 w-1/3 rounded" style={{ backgroundColor: currentTheme.imalat }}></div>
+                       <div className="h-8 w-1/3 rounded" style={{ backgroundColor: currentTheme.kaynak }}></div>
+                       <div className="h-8 w-1/3 rounded" style={{ backgroundColor: currentTheme.temizlik }}></div>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase mt-2">Bu renkler tüm raporlama sayfalarında geçerli olacaktır.</p>
                </div>
             </div>
           </div>
@@ -278,5 +357,32 @@ const SettingsView: React.FC<SettingsViewProps> = ({
     </div>
   );
 };
+
+const ThemeSection = ({ title, children }: any) => (
+  <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col gap-6">
+    <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50 pb-3">{title}</h4>
+    {children}
+  </div>
+);
+
+const ColorPicker = ({ label, value, onChange }: { label: string, value: string, onChange: (v: string) => void }) => (
+  <div className="flex items-center justify-between gap-4">
+     <div className="flex flex-col">
+        <span className="text-[10px] font-black text-slate-900 uppercase tracking-tighter">{label}</span>
+        <span className="text-[10px] font-mono text-slate-400">{value.toUpperCase()}</span>
+     </div>
+     <div className="relative">
+        <input 
+          type="color" 
+          value={value} 
+          onChange={(e) => onChange(e.target.value)} 
+          className="w-10 h-10 rounded-full border-2 border-white shadow-md cursor-pointer overflow-hidden opacity-0 absolute inset-0 z-10"
+        />
+        <div className="w-10 h-10 rounded-full border-2 border-slate-100 shadow-sm flex items-center justify-center transition-all" style={{ backgroundColor: value }}>
+           <Pipette size={14} className="text-white mix-blend-difference" />
+        </div>
+     </div>
+  </div>
+);
 
 export default SettingsView;
