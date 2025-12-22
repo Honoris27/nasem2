@@ -34,20 +34,43 @@ const ProjectReport: React.FC<ProjectReportProps> = ({ entries, budgets, teams, 
     const uniqueTeamIds = Array.from(new Set(filteredEntries.map(e => e.teamId)));
     return uniqueTeamIds.map(tId => {
       const team = teams.find(t => t.id === tId);
-      const teamEntries = filteredEntries.filter(e => e.teamId === tId);
-      const teamBudget = budgets.find(b => b.teamId === tId && b.year === filterYear && b.month === filterMonth);
-      const imalat = teamEntries.filter(e => e.type === ProductionType.IMALAT).reduce((a, c) => a + c.quantityKg, 0);
-      const kaynak = teamEntries.filter(e => e.type === ProductionType.KAYNAK).reduce((a, c) => a + c.quantityKg, 0);
-      const temizlik = teamEntries.filter(e => e.type === ProductionType.TEMIZLIK).reduce((a, c) => a + c.quantityKg, 0);
-      const total = imalat + kaynak + temizlik;
-      const hours = teamBudget ? (teamBudget.personnelCount * (teamBudget.workingDays?.length || 0) * DAILY_WORKING_HOURS) : 0;
-      const personnel = teamBudget?.personnelCount || 0;
-      const cost = teamBudget?.amountTL || 0;
-      const unitCost = total > 0 ? (cost / total) : 0;
       
-      return { id: tId, name: team?.name || 'Ekip', imalat, kaynak, temizlik, total, hours, personnel, unitCost };
+      // Ekibin bu projedeki üretimi
+      const teamProjectEntries = filteredEntries.filter(e => e.teamId === tId);
+      const projectImalat = teamProjectEntries.filter(e => e.type === ProductionType.IMALAT).reduce((a, c) => a + c.quantityKg, 0);
+      const projectKaynak = teamProjectEntries.filter(e => e.type === ProductionType.KAYNAK).reduce((a, c) => a + c.quantityKg, 0);
+      const projectTemizlik = teamProjectEntries.filter(e => e.type === ProductionType.TEMIZLIK).reduce((a, c) => a + c.quantityKg, 0);
+      const projectTotal = projectImalat + projectKaynak + projectTemizlik;
+
+      // Ekibin o ayki TÜM üretimi (Oranlama için gerekli)
+      const teamAllMonthEntries = entries.filter(e => e.teamId === tId && e.year === filterYear && e.month === filterMonth);
+      const teamTotalMonthKg = teamAllMonthEntries.reduce((a, c) => a + c.quantityKg, 0);
+
+      // Ekibin bütçesi ve toplam kapasitesi
+      const teamBudget = budgets.find(b => b.teamId === tId && b.year === filterYear && b.month === filterMonth);
+      const teamTotalMonthHours = teamBudget ? (teamBudget.personnelCount * (teamBudget.workingDays?.length || 0) * DAILY_WORKING_HOURS) : 0;
+      const teamTotalMonthCost = teamBudget?.amountTL || 0;
+      const personnel = teamBudget?.personnelCount || 0;
+
+      // ORANLAMA: Bu projenin ekibin o ayki toplam KG üretimindeki payı
+      const projectRatio = teamTotalMonthKg > 0 ? (projectTotal / teamTotalMonthKg) : 0;
+      const projectAllocatedHours = teamTotalMonthHours * projectRatio;
+      const projectAllocatedCost = teamTotalMonthCost * projectRatio;
+      const unitCost = projectTotal > 0 ? (projectAllocatedCost / projectTotal) : 0;
+      
+      return { 
+        id: tId, 
+        name: team?.name || 'Ekip', 
+        imalat: projectImalat, 
+        kaynak: projectKaynak, 
+        temizlik: projectTemizlik, 
+        total: projectTotal, 
+        hours: projectAllocatedHours, 
+        personnel, 
+        unitCost 
+      };
     });
-  }, [filteredEntries, teams, budgets, filterYear, filterMonth, selectedProjectId]);
+  }, [filteredEntries, entries, teams, budgets, filterYear, filterMonth, selectedProjectId]);
 
   const summary = useMemo(() => {
     const projectTotalKg = matrixData.reduce((a, c) => a + c.total, 0);
@@ -116,7 +139,7 @@ const ProjectReport: React.FC<ProjectReportProps> = ({ entries, budgets, teams, 
                 <th className="text-center">KAYNAK</th>
                 <th className="text-center">TEMİZLİK</th>
                 <th className="text-center bg-slate-800">TOPLAM (KG)</th>
-                <th className="text-center w-[70px]">SAAT</th>
+                <th className="text-center w-[70px]">PROJE SAATİ</th>
                 <th className="text-right w-[90px]">B. MALİYET</th>
               </tr>
             </thead>
@@ -131,7 +154,7 @@ const ProjectReport: React.FC<ProjectReportProps> = ({ entries, budgets, teams, 
                   <td className="text-center text-slate-500">{data.kaynak.toLocaleString()}</td>
                   <td className="text-center text-slate-500">{data.temizlik.toLocaleString()}</td>
                   <td className="text-center font-bold text-slate-900 bg-slate-100/50">{data.total.toLocaleString()}</td>
-                  <td className="text-center text-slate-900 font-bold">{Math.round(data.hours).toLocaleString()}</td>
+                  <td className="text-center text-blue-600 font-black">{Math.round(data.hours).toLocaleString()}</td>
                   <td className="text-right text-emerald-700 font-bold">₺{data.unitCost.toFixed(2)}</td>
                 </tr>
               ))}

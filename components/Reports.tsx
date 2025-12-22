@@ -47,7 +47,7 @@ const Reports: React.FC<ReportsProps> = ({ entries, budgets, teams, projects, te
       if (teamEntries.length === 0 && (!teamBudget || teamBudget.amountTL === 0)) return null;
 
       const teamTotalKg = teamEntries.reduce((acc, curr) => acc + curr.quantityKg, 0);
-      const teamHours = teamBudget ? (teamBudget.personnelCount * (teamBudget.workingDays?.length || 0) * DAILY_WORKING_HOURS) : 0;
+      const teamTotalHours = teamBudget ? (teamBudget.personnelCount * (teamBudget.workingDays?.length || 0) * DAILY_WORKING_HOURS) : 0;
       const teamCost = teamBudget?.amountTL || 0;
       const unitCost = teamTotalKg > 0 ? (teamCost / teamTotalKg) : 0;
       const personnelCount = teamBudget?.personnelCount || 0;
@@ -55,13 +55,23 @@ const Reports: React.FC<ReportsProps> = ({ entries, budgets, teams, projects, te
       const projectBreakdown = Array.from(new Set(teamEntries.map(e => e.projectId))).map(pId => {
         const pEntries = teamEntries.filter(e => e.projectId === pId);
         const pName = projects.find(p => p.id === pId)?.name || '---';
+        const pTotalKg = pEntries.reduce((a, c) => a + c.quantityKg, 0);
+        
+        // ORANLAMA MANTIĞI: Projenin toplam üretimdeki payı kadar adam-saat ve maliyet atanır
+        const projectRatio = teamTotalKg > 0 ? (pTotalKg / teamTotalKg) : 0;
+        const pAllocatedHours = teamTotalHours * projectRatio;
+        const pAllocatedCost = teamCost * projectRatio;
+        const pUnitCost = pTotalKg > 0 ? (pAllocatedCost / pTotalKg) : 0;
+
         return {
           id: pId,
           name: pName,
           imalat: pEntries.filter(e => e.type === ProductionType.IMALAT).reduce((a, c) => a + c.quantityKg, 0),
           kaynak: pEntries.filter(e => e.type === ProductionType.KAYNAK).reduce((a, c) => a + c.quantityKg, 0),
           temizlik: pEntries.filter(e => e.type === ProductionType.TEMIZLIK).reduce((a, c) => a + c.quantityKg, 0),
-          total: pEntries.reduce((a, c) => a + c.quantityKg, 0)
+          total: pTotalKg,
+          hours: pAllocatedHours,
+          unitCost: pUnitCost
         };
       });
 
@@ -73,7 +83,7 @@ const Reports: React.FC<ReportsProps> = ({ entries, budgets, teams, projects, te
         kaynak: teamEntries.filter(e => e.type === ProductionType.KAYNAK).reduce((a, c) => a + c.quantityKg, 0),
         temizlik: teamEntries.filter(e => e.type === ProductionType.TEMIZLIK).reduce((a, c) => a + c.quantityKg, 0),
         totalKg: teamTotalKg,
-        hours: teamHours,
+        hours: teamTotalHours,
         unitCost: unitCost,
         projects: projectBreakdown
       };
@@ -163,8 +173,8 @@ const Reports: React.FC<ReportsProps> = ({ entries, budgets, teams, projects, te
                       <td className="text-center text-[9px] border-r border-slate-50">{p.kaynak.toLocaleString()}</td>
                       <td className="text-center text-[9px] border-r border-slate-50">{p.temizlik.toLocaleString()}</td>
                       <td className="text-center text-[9px] font-bold text-slate-600 border-r border-slate-50">{p.total.toLocaleString()}</td>
-                      <td className="text-center text-[9px] text-slate-200">---</td>
-                      <td className="text-right text-[9px] text-slate-200">---</td>
+                      <td className="text-center text-[9px] text-slate-400 font-bold">{Math.round(p.hours).toLocaleString()}</td>
+                      <td className="text-right text-[9px] text-emerald-600/60 font-bold">₺{p.unitCost.toFixed(2)}</td>
                     </tr>
                   ))}
                 </React.Fragment>
